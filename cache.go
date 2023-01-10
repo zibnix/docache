@@ -68,7 +68,9 @@ func (c *cache[T]) do() Data[T] {
 	ts := time.Now()
 	v, err := c.doer.Do()
 	if err != nil {
-		c.logger.Println(err)
+		c.logger.Printf("Doer error: %+v\n", err)
+	} else {
+		c.logger.Printf("Doer success: %+v\n", v)
 	}
 
 	return Data[T]{
