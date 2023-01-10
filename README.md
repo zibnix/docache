@@ -4,7 +4,7 @@ Do something in a loop, caching the results. All methods safe for concurrent use
 ### Why?
 
 This code can allow you to control the frequency that some data is generated, rather
-than responding to something that might have a higher frequency, like network requests.
+than responding to something that might have a nono-ideal frequency, like network requests.
 Use this code to prevent network activity from reaching your data storage or devices if
 you don't ever want a request to wait for backend IO.
 
