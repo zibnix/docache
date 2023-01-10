@@ -2,6 +2,7 @@ package docache
 
 import (
 	"context"
+	"log"
 	"time"
 )
 
@@ -37,12 +38,14 @@ func NewCache[T any](
 	ctx context.Context,
 	interval time.Duration,
 	capacity int,
+	logger log.Logger,
 	doer Doer[T]) Cache[T] {
 
 	return &cache[T]{
 		ctx:      ctx,
 		interval: interval,
 		capacity: capacity,
+		logger:   logger,
 		doer:     doer,
 		data:     make([]Data[T], 0, capacity),
 	}

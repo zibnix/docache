@@ -50,13 +50,13 @@ type DoerFunc[T any] func() (T, error)
 
 ## Use the constructor
 ```go
-func NewCache[T any](ctx context.Context, interval time.Duration, capacity int, doer Doer[T]) Cache[T]
+func NewCache[T any](ctx context.Context, interval time.Duration, capacity int, logger log.Logger, doer Doer[T]) Cache[T]
 ```
 
 ## Use the methods
 ```go
 // create a cache
-cache := docache.NewCache(ctx, interval, capacity, doer)
+cache := docache.NewCache(ctx, interval, capacity, logger, doer)
 
 // go do stuff on a goroutine
 go cache.Loop()

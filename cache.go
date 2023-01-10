@@ -2,6 +2,7 @@ package docache
 
 import (
 	"context"
+	"log"
 	"sync"
 	"time"
 )
@@ -10,6 +11,7 @@ type cache[T any] struct {
 	ctx      context.Context
 	interval time.Duration
 	capacity int
+	logger   log.Logger
 	doer     Doer[T]
 
 	data []Data[T]
@@ -65,6 +67,10 @@ func (c *cache[T]) Loop() {
 func (c *cache[T]) do() Data[T] {
 	ts := time.Now()
 	v, err := c.doer.Do()
+	if err != nil {
+		c.logger.Println(err)
+	}
+
 	return Data[T]{
 		Value:     v,
 		Timestamp: ts,
