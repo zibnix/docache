@@ -16,7 +16,7 @@ you don't ever want a request to wait for backend IO.
 // A Cache can be started and stopped and started again
 // as long as the context provided to NewCache is not done.
 // Data returns a slice, copied from the internal cache.
-// The slice will be of length [0 - capacity].
+// The slice will be of length [0, capacity].
 type Cache[T any] interface {
 	Loop()
 	Data() []Data[T]
