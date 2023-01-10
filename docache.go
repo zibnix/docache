@@ -41,6 +41,10 @@ func NewCache[T any](
 	logger log.Logger,
 	doer Doer[T]) Cache[T] {
 
+	if capacity < 1 {
+		capacity = 1
+	}
+
 	return &cache[T]{
 		ctx:      ctx,
 		interval: interval,
