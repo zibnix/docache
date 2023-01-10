@@ -17,6 +17,17 @@ type Cache[T any] interface {
 }
 ```
 
+```go
+// Data has a few extra fields added alongside your type.
+// If your Doer returns an error, it is recorded in the
+// Error field for that piece of Data.
+type Data[T any] struct {
+	Value     T
+	Timestamp time.Time
+	Error     error
+}
+```
+
 ## Implement the Doer[T] interface in your code
 A `Doer` just returns any type T. This can be a method on a type you define,
 or if you have a simple `Doer`, you can cast a `func` with a matching signature
