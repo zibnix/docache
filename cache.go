@@ -14,7 +14,8 @@ type cache[T any] struct {
 	logger   log.Logger
 	doer     Doer[T]
 
-	data []Data[T]
+	latest Data[T]
+	data   []Data[T]
 
 	looping bool
 	lk      sync.RWMutex
@@ -32,6 +33,12 @@ func (c *cache[T]) Data() []Data[T] {
 	c.lk.RUnlock()
 
 	return cpy
+}
+
+func (c *cache[T]) Latest() Data[T] {
+	c.lk.RLock()
+	defer c.lk.RUnlock()
+	return c.latest
 }
 
 func (c *cache[T]) Loop() {
@@ -80,6 +87,12 @@ func (c *cache[T]) do() Data[T] {
 	}
 }
 
+func (c *cache[T]) finished() {
+	c.lk.Lock()
+	c.looping = false
+	c.lk.Unlock()
+}
+
 func (c *cache[T]) Stop() {
 	c.lk.Lock()
 	if !c.looping {
@@ -93,12 +106,23 @@ func (c *cache[T]) Stop() {
 	c.wg.Wait()
 }
 
-// an alternative version of add is included at the bottom of this file
 func (c *cache[T]) add(d Data[T]) {
 	c.lk.Lock()
+	if d.Error == nil {
+		c.latest = d
+	}
+
+	if c.capacity > 0 {
+		c.grow(d)
+	}
+	c.lk.Unlock()
+}
+
+// an alternative version of grow is included below
+// call with c.lk.Lock held
+func (c *cache[T]) grow(d Data[T]) {
 	if len(c.data) < c.capacity {
 		c.data = append(c.data, d)
-		c.lk.Unlock()
 		return
 	}
 
@@ -109,25 +133,17 @@ func (c *cache[T]) add(d Data[T]) {
 	}
 
 	c.data[len(c.data)-1] = d
-	c.lk.Unlock()
-}
-
-func (c *cache[T]) finished() {
-	c.lk.Lock()
-	c.looping = false
-	c.lk.Unlock()
 }
 
 // UNUSED:
-// an alternative implementation of add that always appends
+// an alternative implementation of grow that always appends
 // and reslices when capacity is exceeded
-func (c *cache[T]) _add(d Data[T]) {
-	c.lk.Lock()
+// call with c.lk.Lock held
+func (c *cache[T]) _grow(d Data[T]) {
 	c.data = append(c.data, d)
 
 	length := len(c.data)
 	if length <= c.capacity {
-		c.lk.Unlock()
 		return
 	}
 
@@ -135,12 +151,9 @@ func (c *cache[T]) _add(d Data[T]) {
 
 	// zero out overflow of backing array to encourage GC
 	for i := 0; i < overflow; i++ {
-		// new() allocates any type and returns a pointer to it
-		// dereferencing that yields the zero value of a T
-		c.data[i] = Data[T]{Value: *new(T)}
+		c.data[i] = Data[T]{}
 
 	}
 
 	c.data = c.data[overflow:]
-	c.lk.Unlock()
 }

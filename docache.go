@@ -11,10 +11,14 @@ import (
 // Call Stop to stop looping.
 // A Cache can be started and stopped and started again
 // as long as the context provided to NewCache is not done.
+// Latest returns the most recent successful result or the zero value.
+// Check if the Latest is invalid with Data.Timestamp.IsZero.
 // Data returns a slice, copied from the internal cache.
-// The slice will be of length [0, capacity].
+// The slice will be of length [0, capacity] and may contain
+// Data that have no Value but have an Error.
 type Cache[T any] interface {
 	Loop()
+	Latest() Data[T]
 	Data() []Data[T]
 	Stop()
 }
@@ -34,6 +38,7 @@ type Data[T any] struct {
 // (assuming those data have not been pushed out by reaching max capacity).
 // If that's a problem, don't change things after retrieval, or don't use
 // a reference, or make a deeper copy of the data before mutating.
+// capacity can be zero, relying on Latest only
 func NewCache[T any](
 	ctx context.Context,
 	interval time.Duration,
@@ -41,8 +46,8 @@ func NewCache[T any](
 	logger log.Logger,
 	doer Doer[T]) Cache[T] {
 
-	if capacity < 1 {
-		capacity = 1
+	if capacity < 0 {
+		capacity = 0
 	}
 
 	return &cache[T]{

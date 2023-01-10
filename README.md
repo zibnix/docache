@@ -10,15 +10,20 @@ you don't ever want a request to wait for backend IO.
 
 ## The Cache[T] interface this pkg provides
 ```go
+
 // Call Loop on a goroutine, it does block.
 // Loop returns immediately if the cache is already looping.
 // Call Stop to stop looping.
 // A Cache can be started and stopped and started again
 // as long as the context provided to NewCache is not done.
+// Latest returns the most recent successful result or the zero value.
+// Check if the Latest is invalid with Data.Timestamp.IsZero.
 // Data returns a slice, copied from the internal cache.
-// The slice will be of length [0, capacity].
+// The slice will be of length [0, capacity] and may contain
+// Data that have no Value but have an Error.
 type Cache[T any] interface {
 	Loop()
+	Latest() Data[T]
 	Data() []Data[T]
 	Stop()
 }
@@ -61,8 +66,17 @@ cache := docache.NewCache(ctx, interval, capacity, logger, doer)
 // go do stuff on a goroutine
 go cache.Loop()
 
-// get a slice of the current data (parallel safe)
-data := cache.Data()
+// get the latest data
+data := cache.Latest()
+
+// check to see if it is actually valid
+if !data.Timestamp.IsZero() {
+    // do something with this valid data
+}
+
+// get a slice of data, of up to capacity length
+// including any errors in that time
+slice := cache.Data()
 
 // stop the loop when it's time to shutdown (blocks)
 cache.Stop()
