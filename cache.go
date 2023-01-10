@@ -11,7 +11,7 @@ type cache[T any] struct {
 	ctx      context.Context
 	interval time.Duration
 	capacity int
-	logger   log.Logger
+	logger   *log.Logger
 	doer     Doer[T]
 
 	latest Data[T]

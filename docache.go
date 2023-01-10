@@ -43,7 +43,7 @@ func NewCache[T any](
 	ctx context.Context,
 	interval time.Duration,
 	capacity int,
-	logger log.Logger,
+	logger *log.Logger,
 	doer Doer[T]) Cache[T] {
 
 	if capacity < 0 {
