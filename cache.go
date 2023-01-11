@@ -17,10 +17,11 @@ type cache[T any] struct {
 	latest Data[T]
 	data   []Data[T]
 
-	looping bool
-	lk      sync.RWMutex
-	wg      sync.WaitGroup
-	quit    chan struct{}
+	looping  bool
+	stopping bool
+	lk       sync.RWMutex
+	wg       sync.WaitGroup
+	quit     chan struct{}
 }
 
 func (c *cache[T]) Data() []Data[T] {
@@ -43,7 +44,7 @@ func (c *cache[T]) Latest() Data[T] {
 
 func (c *cache[T]) Loop() {
 	c.lk.Lock()
-	if c.looping {
+	if c.looping || c.stopping {
 		c.lk.Unlock()
 		return
 	}
@@ -100,10 +101,21 @@ func (c *cache[T]) Stop() {
 		return
 	}
 
+	if c.stopping {
+		c.lk.Unlock()
+		return
+	}
+
+	c.stopping = true
+
 	close(c.quit)
 	c.lk.Unlock()
 
 	c.wg.Wait()
+
+	c.lk.Lock()
+	c.stopping = false
+	c.lk.Unlock()
 }
 
 func (c *cache[T]) add(d Data[T]) {
