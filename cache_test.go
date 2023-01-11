@@ -196,6 +196,8 @@ func TestDataOverflow(t *testing.T) {
 
 	time.Sleep(2 * sleep)
 
+	cache.Stop()
+
 	latest := cache.Latest()
 
 	if latest.Value.index < capacity+2 {
@@ -203,9 +205,15 @@ func TestDataOverflow(t *testing.T) {
 	}
 
 	slc := cache.Data()
-	if len(slc) < capacity {
-		t.Fatal("capacity not reached")
+	if len(slc) != capacity {
+		t.Fatal("capacity not reached or not respected")
 	}
+
+	if !reflect.DeepEqual(latest, slc[len(slc)-1]) {
+		t.Fatal("data not in correct state after capacity overflow")
+	}
+
+	validateData(t, slc)
 }
 
 func TestChaos(t *testing.T) {
@@ -241,7 +249,7 @@ func TestChaos(t *testing.T) {
 func callMethod[T any](cache Cache[T], m int) {
 	switch m {
 	case 0:
-		cache.Loop()
+		go cache.Loop()
 	case 1:
 		cache.Stop()
 	case 2:
