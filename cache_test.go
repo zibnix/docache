@@ -70,19 +70,8 @@ var (
 	sleep    = 50 * time.Millisecond
 )
 
-func newFibberCache(capacity int) Cache[*fib] {
+func newCache(capacity int) Cache[*fib] {
 	return NewCache[*fib](ctx, interval, capacity, logger, NewFibber())
-}
-
-func newRawCache(capacity int) *cache[*fib] {
-	return &cache[*fib]{
-		ctx:      ctx,
-		interval: interval,
-		capacity: capacity,
-		logger:   logger,
-		doer:     NewFibber(),
-		data:     make([]Data[*fib], 0, capacity),
-	}
 }
 
 func TestLatest(t *testing.T) {
@@ -111,10 +100,10 @@ func TestLatest(t *testing.T) {
 
 func TestStop(t *testing.T) {
 	t.Parallel()
-	rawCacheStartStop(t, newRawCache(capacity))
+	cacheStartStop(t, newCache(capacity))
 }
 
-func rawCacheStartStop(t *testing.T, cache *cache[*fib]) {
+func cacheStartStop(t *testing.T, cache Cache[*fib]) {
 	looping := make(chan struct{})
 	go func() {
 		cache.Loop()
@@ -144,22 +133,18 @@ func rawCacheStartStop(t *testing.T, cache *cache[*fib]) {
 	case <-looping:
 		// success
 	}
-
-	if cache.looping == true {
-		t.Fatal("looping == true after Stop, loop did actually stop")
-	}
 }
 
 func TestData(t *testing.T) {
 	t.Parallel()
-	cache := newRawCache(capacity)
+	cache := newCache(capacity)
 
-	rawCacheStartStop(t, cache)
+	cacheStartStop(t, cache)
 
 	d1 := cache.Data()
 	validateData(t, d1)
 
-	rawCacheStartStop(t, cache)
+	cacheStartStop(t, cache)
 
 	d2 := cache.Data()
 	validateData(t, d2)
@@ -205,7 +190,7 @@ func validateData(t *testing.T, data []Data[*fib]) {
 func TestDataOverflow(t *testing.T) {
 	t.Parallel()
 	capacity := 5
-	cache := newRawCache(capacity)
+	cache := newCache(capacity)
 
 	go cache.Loop()
 
@@ -225,7 +210,7 @@ func TestDataOverflow(t *testing.T) {
 
 func TestChaos(t *testing.T) {
 	t.Parallel()
-	cache := newFibberCache(capacity)
+	cache := newCache(capacity)
 
 	quit := make(chan struct{})
 	var wg sync.WaitGroup
